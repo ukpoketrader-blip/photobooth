@@ -41,7 +41,9 @@ Keep your **domain on GoDaddy**. Host the app on managed services with generous 
 1. Sign up at [neon.tech](https://neon.tech) → **New project** (pick **EU** region if offered).  
 2. Copy the **connection string** (pooled URL is fine).  
 3. It looks like:  
-   `postgresql://user:pass@ep-xxx.eu-west-1.aws.neon.tech/neondb?sslmode=require`  
+   `postgresql://user:pass@ep-xxx.eu-west-1.aws.neon.tech/neondb?sslmode=require`
+
+   **Important for Railway:** Prisma often fails if the URL includes `&channel_binding=require`. Use **only** `?sslmode=require` (copy the pooled connection string from Neon and strip `channel_binding` if present).  
 4. Save as `DATABASE_URL` for later.
 
 Run schema once from your PC (with the repo cloned):

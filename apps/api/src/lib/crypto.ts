@@ -20,10 +20,10 @@ export function hashPassword(password: string): string {
 }
 
 export function verifyPassword(password: string, stored: string): boolean {
-  const [salt, hash] = stored.split(":");
-  if (!salt || !hash) return false;
-  const computed = scryptSync(password, salt, 64).toString("hex");
   try {
+    const [salt, hash] = stored.split(":");
+    if (!salt || !hash) return false;
+    const computed = scryptSync(password, salt, 64).toString("hex");
     return timingSafeEqual(Buffer.from(computed), Buffer.from(hash));
   } catch {
     return false;

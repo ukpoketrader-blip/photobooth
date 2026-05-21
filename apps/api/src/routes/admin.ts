@@ -26,11 +26,37 @@ import { MAX_FRAME_BYTES } from "@photobooth/shared";
 export const adminRoutes = new Hono();
 
 adminRoutes.post("/auth/login", async (c) => {
-  const body = loginSchema.parse(await c.req.json());
-  const user = await loginAdmin(body.email, body.password);
-  if (!user) return c.json({ error: "Invalid credentials" }, 401);
-  const token = await createAdminToken(user);
-  return c.json({ token, user: { id: user.id, email: user.email, organisationId: user.organisationId } });
+  try {
+    const body = loginSchema.parse(await c.req.json());
+    const user = await loginAdmin(body.email, body.password);
+    if (!user) return c.json({ error: "Invalid credentials" }, 401);
+    const token = await createAdminToken(user);
+    return c.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        organisationId: user.organisationId,
+      },
+    });
+  } catch (e) {
+    console.error("[admin/login]", e);
+    const message = e instanceof Error ? e.message : "Login failed";
+    if (
+      message.includes("Prisma") ||
+      message.includes("Can't reach database") ||
+      message.includes("database server")
+    ) {
+      return c.json(
+        {
+          error: "Database unavailable",
+          hint: "Fix DATABASE_URL on the API service. For Neon use: ?sslmode=require (remove channel_binding=require).",
+        },
+        503
+      );
+    }
+    throw e;
+  }
 });
 
 adminRoutes.use("/*", adminAuth);
