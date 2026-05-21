@@ -1,0 +1,23 @@
+import type { NextConfig } from "next";
+
+const apiUrl = process.env.API_URL ?? "http://localhost:3002";
+
+const nextConfig: NextConfig = {
+  reactStrictMode: true,
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**", pathname: "/**" },
+      { protocol: "http", hostname: "localhost", pathname: "/**" },
+    ],
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${apiUrl}/api/:path*`,
+      },
+    ];
+  },
+};
+
+export default nextConfig;

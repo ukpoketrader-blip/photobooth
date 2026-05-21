@@ -1,0 +1,26 @@
+{
+  "name": "@photobooth/worker",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "purge": "tsx src/purge.ts",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@photobooth/db": "workspace:*",
+    "@photobooth/services": "workspace:*",
+    "@photobooth/shared": "workspace:*",
+    "bullmq": "^5.34.5",
+    "dotenv": "^16.4.7",
+    "ioredis": "^5.4.2",
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

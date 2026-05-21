@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Photobooth Kiosk — UI Design Brief</title>
+  <style>
+    :root {
+      --ink: #1e1b4b;
+      --muted: #475569;
+      --accent: #6366f1;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      line-height: 1.55;
+      margin: 0;
+      background: #fff;
+      font-size: 11pt;
+    }
+    @page {
+      size: A4;
+      margin: 18mm 16mm;
+    }
+    @media print {
+      body { font-size: 10pt; }
+      .page-break { page-break-before: always; }
+      a { color: var(--ink); text-decoration: none; }
+      .no-print { display: none !important; }
+    }
+    .cover {
+      min-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 3rem 2rem;
+      background: linear-gradient(160deg, #1e1b4b 0%, #312e81 50%, #6366f1 100%);
+      color: #fff;
+    }
+    .cover h1 { font-size: 2.4rem; margin: 0 0 0.5rem; font-weight: 700; }
+    .cover .subtitle { font-size: 1.15rem; opacity: 0.9; max-width: 32rem; }
+    .cover .meta { margin-top: 3rem; font-size: 0.95rem; opacity: 0.85; }
+    .container { max-width: 210mm; margin: 0 auto; padding: 2rem 2rem 3rem; }
+    h2 {
+      font-size: 1.35rem;
+      margin: 2rem 0 0.75rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--ink);
+    }
+    h3 { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; color: #312e81; }
+    h4 { font-size: 0.95rem; margin: 1rem 0 0.35rem; }
+    p { margin: 0.5rem 0; color: var(--muted); }
+    p.lead { font-size: 1.05rem; color: var(--ink); }
+    ul, ol { margin: 0.5rem 0 1rem; padding-left: 1.35rem; color: var(--muted); }
+    li { margin: 0.25rem 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.75rem 0 1.25rem;
+      font-size: 0.92rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.65rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--bg); font-weight: 600; color: var(--ink); }
+    .screen-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin: 1rem 0 1.5rem;
+      overflow: hidden;
+      break-inside: avoid;
+    }
+    .screen-card header {
+      background: var(--bg);
+      padding: 0.65rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .screen-card header strong { font-size: 1rem; color: var(--ink); }
+    .screen-card header .id {
+      font-family: ui-monospace, monospace;
+      font-size: 0.8rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .screen-card .body { padding: 1rem; display: grid; grid-template-columns: 140px 1fr; gap: 1rem; }
+    @media (max-width: 600px) {
+      .screen-card .body { grid-template-columns: 1fr; }
+    }
+    .wireframe {
+      background: #e2e8f0;
+      border: 2px dashed #94a3b8;
+      border-radius: 6px;
+      aspect-ratio: 9 / 16;
+      max-width: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 0.7rem;
+      color: #64748b;
+      padding: 0.5rem;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      background: #e0e7ff;
+      color: #3730a3;
+      margin-right: 0.25rem;
+      margin-bottom: 0.25rem;
+    }
+    .tag.optional { background: #fef3c7; color: #92400e; }
+    .tag.mobile { background: #d1fae5; color: #065f46; }
+    .flow {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      overflow-x: auto;
+      white-space: pre;
+      color: var(--ink);
+    }
+    .spec-box {
+      background: #f1f5f9;
+      border-left: 4px solid var(--accent);
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      border-radius: 0 6px 6px 0;
+    }
+    .spec-box strong { color: var(--ink); }
+    .copy-block {
+      font-family: ui-monospace, monospace;
+      font-size: 0.82rem;
+      background: #fff;
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      margin: 0.35rem 0;
+      color: #334155;
+    }
+    .toc { columns: 2; column-gap: 2rem; }
+    .toc li { break-inside: avoid; }
+    .print-hint {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+    footer.note {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <section class="cover">
+    <h1>Photobooth Kiosk</h1>
+    <p class="subtitle">UI design brief — guest booth experience, mobile share page, and SumUp payment variations.</p>
+    <div class="meta">
+      <div>Document version: 1.0</div>
+      <div>Product: AI photobooth SaaS (UK/EU)</div>
+      <div>Primary surface: Portrait touchscreen kiosk · Secondary: Guest mobile browser</div>
+    </div>
+  </section>
+
+  <div class="container">
+
+    <p class="no-print print-hint">
+      <strong>Save as PDF:</strong> Open this file in Chrome or Edge → Print → Save as PDF (A4, margins default).
+      You can upload the PDF to Figma, Google Drive, Notion, or your design tool.
+    </p>
+
+    <h2>1. Project summary</h2>
+    <p class="lead">
+      Guests use a branded fullscreen web app on a portrait kiosk. They consent, optionally pay via SumUp,
+      choose an AI “look”, take up to three photos (each is AI-styled immediately), pick their favourite,
+      then get a dedicated screen with QR / download / print — not mixed with the large preview image.
+    </p>
+
+    <div class="spec-box">
+      <strong>Design goals</strong>
+      <ul style="margin:0.5rem 0 0;">
+        <li>Touch-first, large targets, readable at arm’s length</li>
+        <li>Clear step-by-step flow; minimal text; strong primary CTA per screen</li>
+        <li>Per-tenant branding: primary colour, secondary background, optional logo</li>
+        <li>Portrait 2:3 photo areas consistent with 6×4″ print output</li>
+      </ul>
+    </div>
+
+    <h2>2. Technical specifications</h2>
+    <table>
+      <tr><th>Item</th><th>Specification</th></tr>
+      <tr><td>Kiosk viewport (design artboard)</td><td><strong>1080 × 1920 px</strong> (9:16) — or 1200 × 1920; safe area 48 px inset on sides</td></tr>
+      <tr><td>Orientation</td><td>Portrait only (kiosk)</td></tr>
+      <tr><td>Photo aspect ratio</td><td><strong>2:3</strong> (portrait) — camera, previews, thumbnails, print</td></tr>
+      <tr><td>Print size (reference)</td><td>4″ × 6″ portrait @ 300 DPI (1200 × 1800 px)</td></tr>
+      <tr><td>Touch targets</td><td>Minimum 48 × 48 px; primary buttons full-width where possible</td></tr>
+      <tr><td>Typography</td><td>System UI stack acceptable; designer may propose display + body pairing</td></tr>
+      <tr><td>Brand colours</td><td>Configurable per booth — use placeholders <span style="color:#6366f1">●</span> Primary <span style="color:#1e1b4b">●</span> Secondary BG</td></tr>
+      <tr><td>QR codes</td><td>Payment QR (~200 px) · Output share QR (~260 px) — high contrast, quiet zone</td></tr>
+      <tr><td>Mobile share page</td><td>375 × 812 baseline (iPhone); responsive; single column</td></tr>
+    </table>
+
+    <h2>3. Screen index (table of contents)</h2>
+    <ol class="toc">
+      <li>K-00 Loading</li>
+      <li>K-01 Consent &amp; start</li>
+      <li>K-01b Consent + age gate (optional)</li>
+      <li>K-02 Payment — SumUp checkout QR (optional)</li>
+      <li>K-02b Payment — terminal / reader wait (optional)</li>
+      <li>K-03 Filter picker</li>
+      <li>K-04 Camera (live + countdown)</li>
+      <li>K-05 Processing</li>
+      <li>K-06 Preview — styled result</li>
+      <li>K-07 Compare / pick favourite (conditional)</li>
+      <li>K-08 Get your photo (outputs)</li>
+      <li>K-09 Error</li>
+      <li>M-01 Share page — loading / success / error</li>
+    </ol>
+
+    <h2>4. User flow</h2>
+    <div class="flow">[K-00 Loading]
+      │
+      ▼
+[K-01 Consent] ──(requireAge16)──► extra checkbox on same screen
+      │
+      ├── payment OFF ──────────────────────────────┐
+      │                                            ▼
+      └── payment ON ──► [K-02 Payment] ──paid──► [K-03 Filter]
+                                                   │
+                                                   ▼
+                                            [K-04 Camera]
+                                                   │
+                                                   ▼
+                                            [K-05 Processing]
+                                                   │
+                                                   ▼
+                                            [K-06 Preview]
+                                                   │
+                    ┌──────────────────────────────┼──────────────────────────────┐
+                    │                              │                              │
+              [Use this photo]                  [Retake]                    [Compare / Choose]
+                    │                         (if attempts left)          (if 2+ variants)
+                    │                              │                              │
+                    │                              └──► back to K-04              ▼
+                    │                                                    [K-07 Pick favourite]
+                    │                                                              │
+                    └──────────────────────────────┬───────────────────────────────┘
+                                                   ▼
+                                            [K-08 Get your photo]
+                                                   │
+                                                   ▼
+                                            [New session] → reload / K-01
+
+Guest phone (after output QR scan):
+  [M-01 Share] — loading → photo + save hint → or error</div>
+
+    <h2>5. Global chrome (kiosk)</h2>
+    <p>Present on most kiosk steps below the cover/loading full-bleed screens.</p>
+    <table>
+      <tr><th>Element</th><th>Notes</th></tr>
+      <tr><td>Header bar</td><td>Primary brand colour background; booth name (H1); optional logo left or centred</td></tr>
+      <tr><td>Content area</td><td>Max width ~720 px centred; padding 32 px; secondary colour as page background</td></tr>
+      <tr><td>Data region label</td><td>Small muted text (e.g. “Data region: UK”) — <em>may be hidden in production UI</em></td></tr>
+    </table>
+
+    <div class="page-break"></div>
+
+    <h2>6. Kiosk screens — detailed</h2>
+
+    <!-- K-00 -->
+    <article class="screen-card">
+      <header><strong>K-00 — Loading</strong><span class="id">Required</span></header>
+      <div class="body">
+        <div class="wireframe">Full screen<br/>spinner</div>
+        <div>
+          <span class="tag">Always first</span>
+          <h4>Purpose</h4>
+          <p>Load booth configuration and branding before guest interaction.</p>
+          <h4>Copy (placeholder)</h4>
+          <div class="copy-block">Loading booth…</div>
+          <h4>Notes</h4>
+          <ul>
+            <li>Full viewport; secondary brand colour background</li>
+            <li>No header required</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <!-- K-01 -->
+    <article class="screen-card">
+      <header><strong>K-01 — Consent &amp; start</strong><span class="id">Required</span></header>
+      <div class="body">
+        <div class="wireframe">Privacy<br/>checkbox<br/>Start CTA</div>
+        <div>
+          <span class="tag">Required</span>
+          <h4>Purpose</h4>
+          <p>GDPR consent and session start.</p>
+          <h4>Copy (placeholder)</h4>
+          <div class="copy-block">[Privacy notice HTML block — rich text from admin]</div>
+          <div class="copy-block">☐ I consent to my photo being processed for this photobooth. Photos are deleted after {N} days.</div>
+          <div class="copy-block">[Start] — disabled until consent checked</div>
+          <h4>States</h4>
+          <ul>
+            <li>Start disabled / enabled</li>
+            <li>Variant K-01b: second checkbox when age gate on</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <!-- K-01b -->
+    <article class="screen-card">
+      <header><strong>K-01b — Consent + age gate</strong><span class="id">Optional</span></header>
+      <div class="body">
+        <div class="wireframe">+ Age<br/>checkbox</div>
+        <div>
+          <span class="tag optional">requireAge16 = on</span>
+          <h4>Additional copy</h4>
+          <div class="copy-block">☐ I confirm I am 16 or older (or have parental consent).</div>
+          <p>Start disabled until <em>both</em> boxes checked.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- K-02 -->
+    <article class="screen-card">
+      <header><strong>K-02 — Payment (SumUp checkout QR)</strong><span class="id">Optional</span></header>
+      <div class="body">
+        <div class="wireframe">Pay £X<br/>QR 200px<br/>Check status</div>
+        <div>
+          <span class="tag optional">paymentEnabled</span>
+          <span class="tag">checkout mode</span>
+          <h4>Purpose</h4>
+          <p>Guest pays before starting; QR opens SumUp hosted checkout on their phone.</p>
+          <h4>Copy (placeholder)</h4>
+          <div class="copy-block">Pay {price} to start</div>
+          <div class="copy-block">[Payment QR code]</div>
+          <div class="copy-block">[I’ve paid — check status]</div>
+          <h4>States</h4>
+          <ul>
+            <li>QR loading (empty/skeleton before URL returns)</li>
+            <li>QR visible</li>
+            <li>Polling / checking (optional subtle feedback on button)</li>
+          </ul>
+          <h4>External screen (out of scope)</h4>
+          <p>SumUp hosted checkout page after scan — not designed in this kit.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- K-02b -->
+    <article class="screen-card">
+      <header><strong>K-02b — Payment (terminal / card reader)</strong><span class="id">Optional</span></header>
+      <div class="body">
+        <div class="wireframe">Pay £X<br/>Terminal<br/>illustration</div>
+        <div>
+          <span class="tag optional">paymentEnabled + sumupReaderId</span>
+          <span class="tag">terminal mode</span>
+          <h4>Purpose</h4>
+          <p>Charge initiated on physical SumUp reader; kiosk shows waiting UI (often no QR).</p>
+          <h4>Copy (placeholder)</h4>
+          <div class="copy-block">Pay {price} to start</div>
+          <div class="copy-block">Please pay on the card terminal</div>
+          <div class="copy-block">[I’ve paid — check status]</div>
+          <h4>Design note</h4>
+          <p>Same layout as K-02 but replace QR area with terminal instruction + icon/illustration.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- K-03 -->
+    <article class="screen-card">
+      <header><strong>K-03 — Filter picker</strong><span class="id">Required</span></header>
+      <div class="body">
+        <div class="wireframe">Grid of<br/>filter cards</div>
+        <div>
+          <h4>Copy</h4>
+          <div class="copy-block">Choose your look</div>
+          <div class="copy-block">[Filter cards: name only today — e.g. Vintage Flash, Cartoon Pop]</div>
+          <div class="copy-block">[Continue to camera]</div>
+          <h4>Interaction</h4>
+          <ul>
+            <li>Single selection; selected state = primary border/background</li>
+            <li>Continue disabled until one filter selected</li>
+            <li>2–6 filters typical; responsive grid (min card ~140 px)</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <!-- K-04 -->
+    <article class="screen-card">
+      <header><strong>K-04 — Camera</strong><span class="id">Required</span></header>
+      <div class="body">
+        <div class="wireframe">2:3 live<br/>preview</div>
+        <div>
+          <h4>Sub-states (same screen)</h4>
+          <ul>
+            <li><strong>Live:</strong> mirrored video, 2:3 frame, max width ~400 px centred</li>
+            <li><strong>Countdown:</strong> overlay 3 → 2 → 1 → snap (large numerals, primary colour)</li>
+          </ul>
+          <h4>Copy</h4>
+          <div class="copy-block">6×4″ portrait — attempt {X} of {N}</div>
+          <div class="copy-block">[Take photo] → triggers countdown</div>
+          <div class="copy-block">[Back] — secondary style, returns to filter</div>
+          <h4>Notes</h4>
+          <ul>
+            <li>N = maxPhotoVariants (default 3, admin 1–5)</li>
+            <li>Frame overlay (if enabled) is applied in AI output, not on live camera</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <!-- K-05 -->
+    <article class="screen-card">
+      <header><strong>K-05 — Processing</strong><span class="id">Required</span></header>
+      <div class="body">
+        <div class="wireframe">Spinner<br/>centred</div>
+        <div>
+          <h4>Copy</h4>
+          <div class="copy-block">Creating your photo…</div>
+          <div class="copy-block">AI styling usually takes 5–15 seconds</div>
+          <h4>Notes</h4>
+          <ul>
+            <li>Full attention screen; no actions</li>
+            <li>Runs after each capture (each retake)</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <!-- K-06 -->
+    <article class="screen-card">
+      <header><strong>K-06 — Preview (styled result)</strong><span class="id">Required</span></header>
+      <div class="body">
+        <div class="wireframe">Styled<br/>2:3 image</div>
+        <div>
+          <h4>Copy</h4>
+          <div class="copy-block">How does this look?</div>
+          <div class="copy-block">Attempt {X} of {N}</div>
+          <div class="copy-block">[Use this photo] — primary</div>
+          <div class="copy-block">[Retake ({N} left)] — secondary, if attempts remain</div>
+          <div class="copy-block">[Compare all {n} photos] / [Choose your favourite ({n} photos)] — if 2+ variants</div>
+          <h4>Variants to design</h4>
+          <ul>
+            <li>First attempt, retakes available</li>
+            <li>Last attempt, no retake — emphasise “Choose favourite” if multiple</li>
+            <li>Only one variant total — no compare button</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <!-- K-07 -->
+    <article class="screen-card">
+      <header><strong>K-07 — Compare / pick favourite</strong><span class="id">Conditional</span></header>
+      <div class="body">
+        <div class="wireframe">2–3<br/>thumbnails</div>
+        <div>
+          <span class="tag optional">2+ processed variants</span>
+          <h4>Copy</h4>
+          <div class="copy-block">Choose your favourite</div>
+          <div class="copy-block">Pick the styled photo to keep, print, or share.</div>
+          <div class="copy-block">Photo 1 · Photo 2 · Photo 3 (under thumbnails)</div>
+          <div class="copy-block">[Retake ({N} left)] — if attempts remain</div>
+          <h4>Interaction</h4>
+          <p>Tap thumbnail → selects job → navigates to K-08 (no extra confirm step today).</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- K-08 -->
+    <article class="screen-card">
+      <header><strong>K-08 — Get your photo</strong><span class="id">Required</span></header>
+      <div class="body">
+        <div class="wireframe">No large<br/>image — QR<br/>+ buttons</div>
+        <div>
+          <h4>Purpose</h4>
+          <p>Dedicated delivery screen after selection. <strong>No full-size photo</strong> on this screen (by design).</p>
+          <h4>Copy</h4>
+          <div class="copy-block">Get your photo</div>
+          <div class="copy-block">Your photo is ready. Use one of the options below.</div>
+          <div class="copy-block">Scan to save on your phone + [QR ~260px] + short URL</div>
+          <div class="copy-block">[Download on this screen]</div>
+          <div class="copy-block">[Print photo] / [Sending to printer…]</div>
+          <div class="copy-block">[Take another (new session)]</div>
+          <h4>Layout variants (separate frames)</h4>
+          <table>
+            <tr><th>ID</th><th>Toggles</th><th>Elements</th></tr>
+            <tr><td>K-08a</td><td>QR only</td><td>QR + new session</td></tr>
+            <tr><td>K-08b</td><td>QR + print</td><td>QR, print, new session</td></tr>
+            <tr><td>K-08c</td><td>QR + download</td><td>QR, download, new session</td></tr>
+            <tr><td>K-08d</td><td>All outputs</td><td>QR, download, print, new session</td></tr>
+            <tr><td>K-08e</td><td>Print only</td><td>Print CTA dominant</td></tr>
+            <tr><td>K-08f</td><td>Download only</td><td>Download CTA dominant</td></tr>
+          </table>
+        </div>
+      </div>
+    </article>
+
+    <!-- K-09 -->
+    <article class="screen-card">
+      <header><strong>K-09 — Error</strong><span class="id">Required</span></header>
+      <div class="body">
+        <div class="wireframe">Error<br/>icon</div>
+        <div>
+          <h4>Copy</h4>
+          <div class="copy-block">Something went wrong</div>
+          <div class="copy-block">{Dynamic error message}</div>
+          <div class="copy-block">[Try again]</div>
+          <h4>Example messages</h4>
+          <ul>
+            <li>Cannot reach the API</li>
+            <li>Upload failed / Processing failed</li>
+            <li>Print bridge unavailable</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <div class="page-break"></div>
+
+    <h2>7. Mobile — guest share page</h2>
+    <p>Opened when guest scans the <strong>output</strong> QR from K-08. Separate from kiosk styling; simpler.</p>
+
+    <article class="screen-card">
+      <header><strong>M-01a — Share loading</strong><span class="id">Mobile</span></header>
+      <div class="body">
+        <div class="wireframe">Mobile<br/>portrait</div>
+        <div><div class="copy-block">Loading your photo…</div></div>
+      </div>
+    </article>
+
+    <article class="screen-card">
+      <header><strong>M-01b — Share success</strong><span class="id">Mobile</span></header>
+      <div class="body">
+        <div class="wireframe">Full width<br/>image 2:3</div>
+        <div>
+          <div class="copy-block">{Booth name}</div>
+          <div class="copy-block">Long-press or use your browser menu to save this image.</div>
+          <div class="copy-block">[Full-width styled photo]</div>
+          <div class="copy-block">This link may stop working after {N} days.</div>
+        </div>
+      </div>
+    </article>
+
+    <article class="screen-card">
+      <header><strong>M-01c — Share error</strong><span class="id">Mobile</span></header>
+      <div class="body">
+        <div class="wireframe">Error</div>
+        <div><div class="copy-block">Photo not found / link expired</div></div>
+      </div>
+    </article>
+
+    <h2>8. Component library</h2>
+    <table>
+      <tr><th>Component</th><th>Variants / notes</th></tr>
+      <tr><td>Primary button</td><td>Full width; primary colour; large type (~1.1rem); 16px+ padding</td></tr>
+      <tr><td>Secondary button</td><td>Grey (#444) — Back, Retake, New session</td></tr>
+      <tr><td>Disabled button</td><td>#555 background; not-allowed cursor</td></tr>
+      <tr><td>Checkbox row</td><td>Consent, age gate — label wraps, 48px tap height</td></tr>
+      <tr><td>Filter card</td><td>Default, selected (3px primary border)</td></tr>
+      <tr><td>Photo thumbnail</td><td>2:3, rounded, optional label “Photo N”</td></tr>
+      <tr><td>QR block</td><td>Centred, caption above/below, URL in muted small type</td></tr>
+      <tr><td>Countdown numeral</td><td>~4rem, bold, primary colour</td></tr>
+      <tr><td>Spinner</td><td>48px circle, primary accent on ring</td></tr>
+      <tr><td>Header</td><td>Primary bg, white text, booth title</td></tr>
+      <tr><td>Privacy block</td><td>HTML content — headings, links, lists allowed</td></tr>
+    </table>
+
+    <h2>9. Admin toggles → design impact</h2>
+    <table>
+      <tr><th>Setting</th><th>Effect on UI</th></tr>
+      <tr><td>paymentEnabled</td><td>Shows K-02 / K-02b before filter</td></tr>
+      <tr><td>requireAge16</td><td>Extra checkbox on K-01</td></tr>
+      <tr><td>maxPhotoVariants (1–5)</td><td>Copy “attempt X of N”; retake limits</td></tr>
+      <tr><td>enableQrShare</td><td>QR block on K-08</td></tr>
+      <tr><td>enableDownload</td><td>Download button on K-08</td></tr>
+      <tr><td>enablePrint</td><td>Print button on K-08</td></tr>
+      <tr><td>enableEmail</td><td><em>Not in UI yet</em> — reserved</td></tr>
+      <tr><td>primaryColor / secondaryColor / logoUrl</td><td>Global branding</td></tr>
+      <tr><td>privacyNoticeHtml</td><td>K-01 content</td></tr>
+      <tr><td>frameEnabled</td><td>Visual only on processed outputs (no extra screen)</td></tr>
+    </table>
+
+    <h2>10. Designer deliverables checklist</h2>
+    <ul>
+      <li>Figma (or equivalent) file at <strong>1080×1920</strong> with 48px safe area</li>
+      <li>All kiosk screens K-00 through K-09 + K-08a–f variants</li>
+      <li>Payment: checkout QR and terminal wait variants</li>
+      <li>Preview variants (retake / no retake / compare)</li>
+      <li>Mobile M-01a–c at 375×812</li>
+      <li>Component sheet: buttons, cards, QR, checkboxes, countdown, spinner, header</li>
+      <li>Brand application example (sample primary/secondary + logo placement)</li>
+      <li>Export: PDF for dev handoff + PNG/PDF per screen optional</li>
+    </ul>
+
+    <h2>11. Out of scope (this brief)</h2>
+    <ul>
+      <li>Admin dashboard (login, instance settings, filter editor)</li>
+      <li>SumUp hosted checkout page (third-party)</li>
+      <li>Email capture screen (future)</li>
+      <li>Animated marketing attract loop / idle screen (not implemented — optional future)</li>
+    </ul>
+
+    <footer class="note">
+      Generated for the Photobooth platform codebase. Kiosk route: <code>/b/{booth-slug}</code> ·
+      Share route: <code>/share/{token}</code>. For questions on behaviour, refer to product/engineering.
+    </footer>
+  </div>
+</body>
+</html>

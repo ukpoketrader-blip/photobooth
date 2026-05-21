@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+.env
+.env.*
+!.env.example
+apps/api/uploads
+**/*.md
+.cursor
+terminals
+agent-transcripts

@@ -1,0 +1,29 @@
+{
+  "name": "@photobooth/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "@photobooth/db": "workspace:*",
+    "@photobooth/services": "workspace:*",
+    "@photobooth/shared": "workspace:*",
+    "bullmq": "^5.34.5",
+    "dotenv": "^16.4.7",
+    "hono": "^4.6.14",
+    "ioredis": "^5.4.2",
+    "jose": "^5.9.6",
+    "sharp": "^0.33.5",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

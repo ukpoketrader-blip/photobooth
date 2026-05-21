@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: photobooth
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/photobooth
+
+      - name: Lint API
+        run: pnpm --filter @photobooth/api lint
+
+      - name: Build booth
+        run: pnpm --filter @photobooth/booth build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3002
+
+      - name: Build admin
+        run: pnpm --filter @photobooth/admin build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3002

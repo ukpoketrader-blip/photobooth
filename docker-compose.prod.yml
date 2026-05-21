@@ -1,0 +1,142 @@
+# Production stack for VPS (GoDaddy, Hetzner, etc.)
+# Usage: docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-photobooth}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        API_URL: ${API_URL:-http://api:3002}
+        NEXT_PUBLIC_BOOTH_URL: ${NEXT_PUBLIC_BOOTH_URL:-http://localhost:3000}
+        NEXT_PUBLIC_ADMIN_URL: ${NEXT_PUBLIC_ADMIN_URL:-http://localhost:3001}
+    image: photobooth:prod
+    env_file: .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    command: ["sh", "deploy/scripts/migrate.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    image: photobooth:prod
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      args:
+        API_URL: ${API_URL:-http://api:3002}
+        NEXT_PUBLIC_BOOTH_URL: ${NEXT_PUBLIC_BOOTH_URL:-http://localhost:3000}
+        NEXT_PUBLIC_ADMIN_URL: ${NEXT_PUBLIC_ADMIN_URL:-http://localhost:3001}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      API_PORT: "3002"
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      STORAGE_LOCAL_PATH: ${STORAGE_LOCAL_PATH:-/data/uploads}
+    command: ["sh", "deploy/scripts/start-api.sh"]
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    expose:
+      - "3002"
+
+  worker:
+    image: photobooth:prod
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      STORAGE_LOCAL_PATH: ${STORAGE_LOCAL_PATH:-/data/uploads}
+    command: ["sh", "deploy/scripts/start-worker.sh"]
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  booth:
+    image: photobooth:prod
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      API_URL: http://api:3002
+      PORT: "3000"
+    command: ["sh", "deploy/scripts/start-booth.sh"]
+    depends_on:
+      - api
+    expose:
+      - "3000"
+
+  admin:
+    image: photobooth:prod
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      API_URL: http://api:3002
+      PORT: "3001"
+    command: ["sh", "deploy/scripts/start-admin.sh"]
+    depends_on:
+      - api
+    expose:
+      - "3001"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file: .env
+    environment:
+      BOOTH_DOMAIN: ${BOOTH_DOMAIN:?Set BOOTH_DOMAIN}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?Set ADMIN_DOMAIN}
+      API_DOMAIN: ${API_DOMAIN:?Set API_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - booth
+      - admin
+      - api
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,247 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PaymentStatus {
+  not_required
+  pending
+  paid
+  failed
+  refunded
+}
+
+enum AiJobStatus {
+  queued
+  running
+  succeeded
+  failed
+}
+
+enum CaptureStatus {
+  uploaded
+  processing
+  complete
+  failed
+}
+
+enum PaymentTransactionStatus {
+  pending
+  succeeded
+  failed
+  cancelled
+}
+
+model Organisation {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sumupAccessToken  String?
+  sumupRefreshToken String?
+  sumupMerchantCode String?
+  sumupConnectedAt  DateTime?
+
+  users           User[]
+  boothInstances  BoothInstance[]
+  frameAssets     FrameAsset[]
+  auditLogs       AuditLog[]
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  passwordHash   String
+  name           String?
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organisationId])
+}
+
+model BoothInstance {
+  id             String   @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  slug           String   @unique
+  publicId       String   @unique @default(cuid())
+  apiSecretHash  String
+
+  primaryColor     String   @default("#6366f1")
+  secondaryColor   String   @default("#1e1b4b")
+  logoUrl          String?
+  privacyNoticeHtml String  @default("")
+  consentVersion   String   @default("1.0")
+  retentionDays    Int      @default(7)
+  locale           String   @default("en-GB")
+
+  enableDownload Boolean @default(false)
+  enableQrShare  Boolean @default(true)
+  enableEmail    Boolean @default(false)
+  enablePrint    Boolean @default(false)
+  windowsPrinterName String?
+  printBridgeUrl     String?  @default("http://127.0.0.1:39100")
+  maxPhotoVariants   Int      @default(3)
+  requireAge16   Boolean @default(false)
+
+  paymentEnabled       Boolean @default(false)
+  paymentAmountMinor   Int     @default(300)
+  paymentCurrency      String  @default("GBP")
+  sumupReaderId        String?
+
+  frameEnabled  Boolean @default(false)
+  frameAssetId  String?
+  frameAsset    FrameAsset? @relation(fields: [frameAssetId], references: [id], onDelete: SetNull)
+
+  dailyJobCap       Int @default(500)
+  maxConcurrentJobs Int @default(3)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  filterPresets FilterPreset[]
+  sessions      Session[]
+  auditLogs     AuditLog[]
+
+  @@index([organisationId])
+}
+
+model FrameAsset {
+  id             String   @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  name           String
+  overlayObjectKey String
+  canvasWidth    Int      @default(1200)
+  canvasHeight   Int      @default(1800)
+  photoInsetX    Int      @default(100)
+  photoInsetY    Int      @default(200)
+  photoInsetW    Int      @default(1000)
+  photoInsetH    Int      @default(1200)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  boothInstances BoothInstance[]
+
+  @@index([organisationId])
+}
+
+model FilterPreset {
+  id              String   @id @default(cuid())
+  boothInstanceId String
+  boothInstance   BoothInstance @relation(fields: [boothInstanceId], references: [id], onDelete: Cascade)
+  name            String
+  promptTemplate  String
+  negativePrompt  String?
+  referenceImageUrls String[] @default([])
+  sortOrder       Int      @default(0)
+  isDefault       Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  aiJobs AiJob[]
+
+  @@index([boothInstanceId])
+}
+
+model Session {
+  id              String   @id @default(cuid())
+  boothInstanceId String
+  boothInstance   BoothInstance @relation(fields: [boothInstanceId], references: [id], onDelete: Cascade)
+  consentAt       DateTime
+  consentVersion  String
+  marketingOptIn  Boolean  @default(false)
+  paymentStatus   PaymentStatus @default(not_required)
+  unlockedAt      DateTime?
+  ipHash          String?
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  paymentTransaction PaymentTransaction?
+  captures           Capture[]
+  selectedCaptureId  String?
+
+  @@index([boothInstanceId])
+  @@index([expiresAt])
+}
+
+model PaymentTransaction {
+  id                 String   @id @default(cuid())
+  sessionId          String   @unique
+  session            Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sumupCheckoutId    String?
+  sumupTransactionId String?
+  amountMinor        Int
+  currency           String
+  status             PaymentTransactionStatus @default(pending)
+  checkoutUrl        String?
+  webhookReceivedAt  DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Capture {
+  id               String   @id @default(cuid())
+  sessionId        String
+  session          Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  originalObjectKey String
+  sequenceIndex    Int      @default(0)
+  status           CaptureStatus @default(uploaded)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  aiJob AiJob?
+
+  @@index([sessionId])
+}
+
+model AiJob {
+  id               String   @id @default(cuid())
+  captureId        String   @unique
+  capture          Capture  @relation(fields: [captureId], references: [id], onDelete: Cascade)
+  filterPresetId   String
+  filterPreset     FilterPreset @relation(fields: [filterPresetId], references: [id])
+  status           AiJobStatus @default(queued)
+  modelId          String
+  styledObjectKey  String?
+  outputObjectKey  String?
+  shareToken       String?  @unique
+  errorMessage     String?
+  tokenUsage       Int?
+  latencyMs        Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  completedAt      DateTime?
+
+  @@index([status])
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organisationId String?
+  organisation   Organisation? @relation(fields: [organisationId], references: [id], onDelete: SetNull)
+  boothInstanceId String?
+  boothInstance  BoothInstance? @relation(fields: [boothInstanceId], references: [id], onDelete: SetNull)
+  actorEmail     String?
+  action         String
+  resourceType   String?
+  resourceId     String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  @@index([organisationId])
+  @@index([createdAt])
+}

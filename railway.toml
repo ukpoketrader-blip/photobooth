@@ -1,0 +1,13 @@
+# Railway monorepo hints (set Custom Start Command per service in the dashboard).
+# Service "api":   pnpm --filter @photobooth/api exec tsx src/index.ts
+# Service "worker": pnpm --filter @photobooth/worker exec tsx src/index.ts
+#
+# See docs/DEPLOY-DEMO.md
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "pnpm install --frozen-lockfile && pnpm db:generate"
+
+[deploy]
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
