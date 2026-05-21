@@ -78,7 +78,9 @@ export async function loginAdmin(
   email: string,
   password: string
 ): Promise<AdminUser | null> {
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({
+    where: { email: email.trim().toLowerCase() },
+  });
   if (!user || !verifyPassword(password, user.passwordHash)) return null;
   return {
     id: user.id,

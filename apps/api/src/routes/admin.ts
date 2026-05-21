@@ -45,17 +45,20 @@ adminRoutes.post("/auth/login", async (c) => {
     if (
       message.includes("Prisma") ||
       message.includes("Can't reach database") ||
-      message.includes("database server")
+      message.includes("database server") ||
+      message.includes("does not exist") ||
+      message.includes("P2021")
     ) {
       return c.json(
         {
-          error: "Database unavailable",
-          hint: "Fix DATABASE_URL on the API service. For Neon use: ?sslmode=require (remove channel_binding=require).",
+          error: "Database schema missing or unavailable",
+          hint: "Run pnpm db:push against your Neon DATABASE_URL, then pnpm db:seed or pnpm admin:set-password.",
+          detail: message,
         },
         503
       );
     }
-    throw e;
+    return c.json({ error: "Login failed", detail: message }, 500);
   }
 });
 
