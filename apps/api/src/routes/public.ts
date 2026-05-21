@@ -386,50 +386,82 @@ publicRoutes.post("/sessions/:id/captures", boothAuth, async (c) => {
   });
   if (!preset) return c.json({ error: "Invalid filter" }, 400);
 
-  const arrayBuffer = await (file as File).arrayBuffer();
-  let buffer = await normalizeToPrintSize(Buffer.from(arrayBuffer));
+  try {
+    const arrayBuffer = await (file as File).arrayBuffer();
+    const buffer = await normalizeToPrintSize(Buffer.from(arrayBuffer));
 
-  const capture = await prisma.capture.create({
-    data: {
-      sessionId,
-      originalObjectKey: "pending",
-      sequenceIndex: session.captures.length,
-      status: CaptureStatus.uploaded,
-    },
-  });
+    const capture = await prisma.capture.create({
+      data: {
+        sessionId,
+        originalObjectKey: "pending",
+        sequenceIndex: session.captures.length,
+        status: CaptureStatus.uploaded,
+      },
+    });
 
-  const key = `captures/${session.boothInstanceId}/${sessionId}/${capture.id}.jpg`;
-  await putObject(key, buffer, "image/jpeg");
-  await prisma.capture.update({
-    where: { id: capture.id },
-    data: { originalObjectKey: key },
-  });
+    const key = `captures/${session.boothInstanceId}/${sessionId}/${capture.id}.jpg`;
+    await putObject(key, buffer, "image/jpeg");
+    await prisma.capture.update({
+      where: { id: capture.id },
+      data: { originalObjectKey: key },
+    });
 
-  const shareToken = generateShareToken();
-  const aiJob = await prisma.aiJob.create({
-    data: {
+    const shareToken = generateShareToken();
+    const aiJob = await prisma.aiJob.create({
+      data: {
+        captureId: capture.id,
+        filterPresetId: preset.id,
+        modelId: env.geminiImageModel,
+        shareToken,
+      },
+    });
+
+    await prisma.capture.update({
+      where: { id: capture.id },
+      data: { status: CaptureStatus.processing },
+    });
+
+    await enqueueAiJob(aiJob.id);
+
+    const count = session.captures.length + 1;
+    return c.json({
       captureId: capture.id,
-      filterPresetId: preset.id,
-      modelId: env.geminiImageModel,
-      shareToken,
-    },
-  });
-
-  await prisma.capture.update({
-    where: { id: capture.id },
-    data: { status: CaptureStatus.processing },
-  });
-
-  await enqueueAiJob(aiJob.id);
-
-  const count = session.captures.length + 1;
-  return c.json({
-    captureId: capture.id,
-    jobId: aiJob.id,
-    attemptNumber: count,
-    retakesRemaining: Math.max(0, maxPhotos - count),
-    maxPhotos,
-  });
+      jobId: aiJob.id,
+      attemptNumber: count,
+      retakesRemaining: Math.max(0, maxPhotos - count),
+      maxPhotos,
+    });
+  } catch (e) {
+    console.error("[captures] upload failed:", e);
+    const message = e instanceof Error ? e.message : "Upload failed";
+    if (
+      message.includes("ECONNREFUSED") ||
+      message.includes("Redis") ||
+      message.includes("ENOTFOUND")
+    ) {
+      return c.json(
+        {
+          error: "Job queue unavailable",
+          hint: "Set REDIS_URL on Railway api + worker (Upstash). Check https://api.eventlab.uk/health/ready",
+        },
+        503
+      );
+    }
+    if (
+      message.includes("EACCES") ||
+      message.includes("ENOENT") ||
+      message.includes("read-only")
+    ) {
+      return c.json(
+        {
+          error: "Photo storage not writable",
+          hint: "On Railway api + worker: STORAGE_LOCAL_PATH=/data/uploads and mount a volume at /data/uploads",
+        },
+        503
+      );
+    }
+    return c.json({ error: "Upload failed", detail: message }, 500);
+  }
 });
 
 publicRoutes.post("/sessions/:id/select", boothAuth, async (c) => {

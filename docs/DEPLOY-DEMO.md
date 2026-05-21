@@ -156,11 +156,42 @@ DEFAULT_RETENTION_DAYS=7
 
 Use your **real domain names** in `API_URL` / `NEXT_PUBLIC_*` even before DNS is live (needed for QR/share links).
 
-**Volume (so photos persist)**  
-Settings → **Volumes** → Add volume, mount path `/data/uploads`  
-(Same path as `STORAGE_LOCAL_PATH`.)
+**Storage (Railway cannot share one volume across services)**
 
-Redeploy after adding variables.
+Railway gives each service its **own** volume. The app supports that: the **api** holds all guest photos; the **worker** fetches originals over HTTPS and copies finished images back to the api.
+
+### `api` service
+
+1. **Volume:** mount `api-volume` at `/data/uploads` (500 MB is fine for demos).  
+2. Variables:
+
+```env
+STORAGE_LOCAL_PATH=/data/uploads
+API_URL=https://api.yourdomain.com
+WORKER_STORAGE_SECRET=<same random secret on worker — see below>
+```
+
+### `worker` service
+
+1. **No volume required** (or keep `worker-volume` only as scratch — not used for guest photos).  
+2. Variables:
+
+```env
+STORAGE_LOCAL_PATH=/tmp/worker-cache
+API_URL=https://api.yourdomain.com
+WORKER_STORAGE_SECRET=<paste the same secret as api>
+STORAGE_MIRROR_TO_API=true
+```
+
+Generate a secret once (PowerShell):
+
+```powershell
+-join ((48..57) + (65..90) + (97..122) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
+```
+
+Redeploy **api** and **worker** after changing variables. Take a **new** photo to test (old sessions may reference missing files).
+
+**Do not** rely on two separate volumes (`api-volume` + `worker-volume`) without `STORAGE_MIRROR_TO_API` — you will get `ENOENT` on `/data/uploads/captures/...`.
 
 ### 3c. Add the `worker` service
 
@@ -222,7 +253,17 @@ NEXT_PUBLIC_BOOTH_URL=https://booth.yourdomain.com
 NEXT_PUBLIC_ADMIN_URL=https://admin.yourdomain.com
 ```
 
-Do **not** add `NEXT_PUBLIC_API_URL` (Vercel often rejects blank values). Requests use `/api/...` on the same host, rewritten to `API_URL`. If Vercel requires a value, set `NEXT_PUBLIC_API_URL` to the **same URL as this app** (booth project → `NEXT_PUBLIC_BOOTH_URL`).
+By default, booth calls `/api/...` on the same host (Vercel rewrites to `API_URL`). That is fine for small requests.
+
+**If photo upload fails with 502** on `/api/public/sessions/.../captures`, set on the **booth** Vercel project:
+
+```env
+NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+```
+
+The browser then uploads directly to Railway (avoids Vercel proxy timeouts). Ensure Railway **api** has `NEXT_PUBLIC_BOOTH_URL=https://booth.yourdomain.com` so CORS allows it.
+
+Otherwise, if Vercel requires a non-empty `NEXT_PUBLIC_API_URL`, use the booth URL (same-origin proxy).
 
 Deploy → **Settings → Domains** → add `booth.yourdomain.com`.
 
@@ -288,6 +329,8 @@ Webhook URL: `https://api.yourdomain.com/api/webhooks/sumup` — configure in Su
 | Problem | Fix |
 |---------|-----|
 | Admin/booth “Failed to fetch” | `API_URL` on Vercel must match live API; check `https://api.yourdomain.com/health` |
+| **502 on `/captures`** after taking a photo | Open `https://api.yourdomain.com/health/ready` — fix any `degraded` check. Set booth `NEXT_PUBLIC_API_URL=https://api.yourdomain.com`. Mount volume on **api + worker**. |
+| Stuck on “Working our magic” | Worker not processing: check Railway **worker** logs, `REDIS_URL`, `GEMINI_API_KEY` on api **and** worker, shared volume |
 | AI never finishes | Railway **worker** running? `GEMINI_API_KEY` set on **both** api and worker? |
 | Images 404 | Railway **volume** mounted on api **and** worker at `/data/uploads` |
 | Camera blocked | Use **https://booth.…** not `*.vercel.app` unless that domain is allowed |

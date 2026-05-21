@@ -26,4 +26,6 @@ export const env = {
   signedUrlTtlSeconds: parseInt(process.env.SIGNED_URL_TTL_SECONDS ?? "300", 10),
   dataRegion: process.env.DATA_REGION ?? "EU/UK",
   nodeEnv: process.env.NODE_ENV ?? "development",
+  /** Shared secret so worker can copy files onto the API volume (split Railway volumes). */
+  workerStorageSecret: process.env.WORKER_STORAGE_SECRET ?? "",
 };

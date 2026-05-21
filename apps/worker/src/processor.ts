@@ -84,7 +84,11 @@ export async function processAiJob(aiJobId: string) {
       data: { status: CaptureStatus.complete },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    let message = err instanceof Error ? err.message : "Unknown error";
+    if (message.includes("ENOENT")) {
+      message =
+        "Photo file not found on worker disk. On Railway, mount the same volume at /data/uploads on both api and worker (STORAGE_LOCAL_PATH=/data/uploads).";
+    }
     await prisma.aiJob.update({
       where: { id: aiJobId },
       data: {

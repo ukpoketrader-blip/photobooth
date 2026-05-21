@@ -335,8 +335,16 @@ export default function BoothPage() {
       }
     );
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      setError((err as { error?: string }).error ?? "Upload failed");
+      const err = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        hint?: string;
+      };
+      const base =
+        err.error ??
+        (res.status === 502
+          ? "Server error uploading photo (502)"
+          : "Upload failed");
+      setError(err.hint ? `${base} — ${err.hint}` : base);
       setStep("error");
       return;
     }
@@ -354,7 +362,11 @@ export default function BoothPage() {
       const done = await pollJobUntilDone(data.jobId);
       setPreviewUrl(done.outputUrl);
       setCurrentJobId(data.jobId);
-      await refreshVariants();
+      try {
+        await refreshVariants();
+      } catch {
+        /* preview still works from job poll */
+      }
       setStep("preview");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Processing failed");

@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile, unlink, stat } from "fs/promises";
 import { join, dirname } from "path";
 import { servicesEnv } from "./env";
+import { fetchObjectFromPeer, mirrorObjectToPeer } from "./storage-peer.js";
 
 const localRoot = servicesEnv.storageLocalPath;
 
@@ -16,11 +17,21 @@ export async function putObject(
   const fullPath = join(localRoot, key);
   await ensureDir(fullPath);
   await writeFile(fullPath, data);
+  await mirrorObjectToPeer(key, data);
   return key;
 }
 
 export async function getObject(key: string): Promise<Buffer> {
-  return readFile(join(localRoot, key));
+  try {
+    return await readFile(join(localRoot, key));
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") {
+      const remote = await fetchObjectFromPeer(key);
+      if (remote) return remote;
+    }
+    throw e;
+  }
 }
 
 export async function deleteObject(key: string): Promise<void> {

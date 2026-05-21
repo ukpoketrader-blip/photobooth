@@ -1,5 +1,11 @@
+import { config } from "dotenv";
+import { resolve } from "path";
 import { PrismaClient } from "@prisma/client";
 import { createHash, randomBytes, scryptSync } from "crypto";
+
+const repoRoot = resolve(__dirname, "../..");
+config({ path: resolve(repoRoot, ".env") });
+config({ path: resolve(repoRoot, "packages/db/.env") });
 
 const prisma = new PrismaClient();
 
@@ -47,27 +53,31 @@ async function main() {
     },
   });
 
-  await prisma.filterPreset.deleteMany({ where: { boothInstanceId: instance.id } });
-  await prisma.filterPreset.createMany({
-    data: [
-      {
-        boothInstanceId: instance.id,
-        name: "Vintage Flash",
-        promptTemplate:
-          "Transform this portrait into a 90s disposable camera photo with direct flash, slight film grain, warm tones, keep the person's likeness.",
-        sortOrder: 0,
-        isDefault: true,
-      },
-      {
-        boothInstanceId: instance.id,
-        name: "Cartoon Pop",
-        promptTemplate:
-          "Stylize this portrait as vibrant cartoon cel-shading with bold outlines, keep facial likeness recognizable.",
-        sortOrder: 1,
-        isDefault: false,
-      },
-    ],
+  const filterCount = await prisma.filterPreset.count({
+    where: { boothInstanceId: instance.id },
   });
+  if (filterCount === 0) {
+    await prisma.filterPreset.createMany({
+      data: [
+        {
+          boothInstanceId: instance.id,
+          name: "Vintage Flash",
+          promptTemplate:
+            "Transform this portrait into a 90s disposable camera photo with direct flash, slight film grain, warm tones, keep the person's likeness.",
+          sortOrder: 0,
+          isDefault: true,
+        },
+        {
+          boothInstanceId: instance.id,
+          name: "Cartoon Pop",
+          promptTemplate:
+            "Stylize this portrait as vibrant cartoon cel-shading with bold outlines, keep facial likeness recognizable.",
+          sortOrder: 1,
+          isDefault: false,
+        },
+      ],
+    });
+  }
 
   const adminEmail = (process.env.ADMIN_EMAIL ?? "admin@example.com")
     .trim()

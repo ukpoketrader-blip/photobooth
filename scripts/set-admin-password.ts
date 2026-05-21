@@ -1,13 +1,16 @@
 /**
  * Set or update admin login (email + password) in the database.
  *
- * Usage (PowerShell — quote DATABASE_URL if it contains &):
- *   $env:DATABASE_URL = "postgresql://..."
- *   $env:ADMIN_EMAIL = "you@yourdomain.com"
- *   $env:ADMIN_PASSWORD = "your-new-password"
- *   pnpm admin:set-password
+ * Loads repo root `.env` then `packages/db/.env` (same as Prisma CLI).
+ * Or set vars in the shell before running.
  */
+import { config } from "dotenv";
+import { resolve } from "path";
 import { PrismaClient } from "@prisma/client";
+
+const repoRoot = resolve(__dirname, "..");
+config({ path: resolve(repoRoot, ".env") });
+config({ path: resolve(repoRoot, "packages/db/.env") });
 import { randomBytes, scryptSync } from "crypto";
 
 function hashPassword(password: string): string {
@@ -17,7 +20,7 @@ function hashPassword(password: string): string {
 }
 
 async function main() {
-  const email = process.env.ADMIN_EMAIL?.trim();
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD;
   const oldEmail = process.env.ADMIN_OLD_EMAIL?.trim();
 
@@ -38,10 +41,11 @@ async function main() {
     : await prisma.user.findUnique({ where: { email } });
 
   if (!existing && !oldEmail) {
-    const org = await prisma.organisation.findFirst();
-    if (!org) {
-      throw new Error("No organisation in DB — run pnpm db:seed first.");
-    }
+    const org = await prisma.organisation.upsert({
+      where: { slug: "demo" },
+      update: {},
+      create: { name: "Demo Events Ltd", slug: "demo" },
+    });
     await prisma.user.create({
       data: {
         email,

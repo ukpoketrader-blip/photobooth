@@ -6,7 +6,9 @@
   "types": "./src/index.ts",
   "scripts": {
     "build": "prisma generate",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "seed": "tsx prisma/seed.ts",
+    "set-admin-password": "tsx ../../scripts/set-admin-password.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0"
@@ -15,6 +17,7 @@
     "schema": "prisma/schema.prisma"
   },
   "devDependencies": {
+    "dotenv": "^16.4.7",
     "prisma": "^6.1.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"

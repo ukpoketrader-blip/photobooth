@@ -12,9 +12,11 @@ import { ZodError } from "zod";
 import { publicRoutes } from "./routes/public.js";
 import { adminRoutes } from "./routes/admin.js";
 import { webhookRoutes } from "./routes/webhooks.js";
+import { internalRoutes } from "./routes/internal.js";
 import { servicesEnv } from "@photobooth/services";
 import { env } from "./lib/env.js";
 import { pingDatabase } from "./lib/db-health.js";
+import { pingRedis, pingStorage } from "./lib/runtime-health.js";
 import { mkdir } from "fs/promises";
 
 const app = new Hono();
@@ -49,6 +51,23 @@ app.get("/health/db", async (c) => {
   return c.json({ status: "ok" });
 });
 
+app.get("/health/ready", async (c) => {
+  const [db, redis, storage] = await Promise.all([
+    pingDatabase(),
+    pingRedis(),
+    pingStorage(),
+  ]);
+  const checks = {
+    database: db.ok ? "ok" : db.error,
+    redis: redis.ok ? "ok" : redis.error,
+    storage: storage.ok ? "ok" : storage.error,
+    gemini: env.geminiApiKey ? "configured" : "missing",
+    storagePath: servicesEnv.storageLocalPath,
+  };
+  const ok = db.ok && redis.ok && storage.ok && Boolean(env.geminiApiKey);
+  return c.json({ status: ok ? "ok" : "degraded", checks }, ok ? 200 : 503);
+});
+
 app.onError((err, c) => {
   if (err instanceof HTTPException) {
     return err.getResponse();
@@ -71,6 +90,7 @@ app.onError((err, c) => {
 app.route("/api/public", publicRoutes);
 app.route("/api/admin", adminRoutes);
 app.route("/api/webhooks", webhookRoutes);
+app.route("/api/internal", internalRoutes);
 
 async function main() {
   await mkdir(servicesEnv.storageLocalPath, { recursive: true });
