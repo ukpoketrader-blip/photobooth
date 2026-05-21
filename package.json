@@ -9,6 +9,7 @@
     "db:migrate": "pnpm --filter @photobooth/db exec prisma migrate dev",
     "db:push": "pnpm --filter @photobooth/db exec prisma db push",
     "db:seed": "pnpm --filter @photobooth/db exec tsx prisma/seed.ts",
+    "admin:set-password": "pnpm --filter @photobooth/db exec tsx ../../scripts/set-admin-password.ts",
     "worker": "pnpm --filter @photobooth/worker dev",
     "purge": "pnpm --filter @photobooth/worker purge"
   },

@@ -1,0 +1,77 @@
+/**
+ * Set or update admin login (email + password) in the database.
+ *
+ * Usage (PowerShell — quote DATABASE_URL if it contains &):
+ *   $env:DATABASE_URL = "postgresql://..."
+ *   $env:ADMIN_EMAIL = "you@yourdomain.com"
+ *   $env:ADMIN_PASSWORD = "your-new-password"
+ *   pnpm admin:set-password
+ */
+import { PrismaClient } from "@prisma/client";
+import { randomBytes, scryptSync } from "crypto";
+
+function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+async function main() {
+  const email = process.env.ADMIN_EMAIL?.trim();
+  const password = process.env.ADMIN_PASSWORD;
+  const oldEmail = process.env.ADMIN_OLD_EMAIL?.trim();
+
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Set DATABASE_URL (your Neon connection string).");
+  }
+  if (!email) {
+    throw new Error("Set ADMIN_EMAIL to the login email you want.");
+  }
+  if (!password || password.length < 8) {
+    throw new Error("Set ADMIN_PASSWORD (min 8 characters).");
+  }
+
+  const prisma = new PrismaClient();
+
+  const existing = oldEmail
+    ? await prisma.user.findUnique({ where: { email: oldEmail } })
+    : await prisma.user.findUnique({ where: { email } });
+
+  if (!existing && !oldEmail) {
+    const org = await prisma.organisation.findFirst();
+    if (!org) {
+      throw new Error("No organisation in DB — run pnpm db:seed first.");
+    }
+    await prisma.user.create({
+      data: {
+        email,
+        passwordHash: hashPassword(password),
+        name: "Admin",
+        organisationId: org.id,
+      },
+    });
+    console.log(`Created admin user: ${email}`);
+  } else if (!existing) {
+    throw new Error(`No user with email ${oldEmail}`);
+  } else {
+    await prisma.user.update({
+      where: { id: existing.id },
+      data: {
+        email,
+        passwordHash: hashPassword(password),
+      },
+    });
+    console.log(
+      oldEmail && oldEmail !== email
+        ? `Updated login: ${oldEmail} → ${email}, password changed.`
+        : `Updated password for ${email}.`
+    );
+  }
+
+  await prisma.$disconnect();
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
