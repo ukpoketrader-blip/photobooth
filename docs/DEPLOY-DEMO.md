@@ -95,6 +95,18 @@ To delete: open the service → **Settings** → scroll down → **Delete servic
 2. If Railway created 5 services, delete `booth`, `admin`, and `print-bridge` as above.  
 3. Rename the API service to **`api`** and ensure **`worker`** exists (add from GitHub if you started with only one).
 
+### Dev access password (protect Gemini credits)
+
+While the booth URL is public, set on the **`api`** service only:
+
+```env
+BOOTH_ACCESS_PASSWORD=your-private-preview-password
+```
+
+Guests must enter this password before starting a session. The password is **never** sent to Vercel (only verified by the API). Remove the variable when you go fully public.
+
+Token lasts **24 hours** per browser (`sessionStorage`).
+
 ### 3b. Configure the `api` service
 
 **Settings → General**

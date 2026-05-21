@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { prisma, PaymentStatus, CaptureStatus } from "@photobooth/db";
 import {
+  boothAccessVerifySchema,
   createSessionSchema,
   createPaymentSchema,
   selectJobSchema,
@@ -8,6 +9,12 @@ import {
 } from "@photobooth/shared";
 import { boothAuth, createBoothToken } from "../middleware/auth.js";
 import { hashIp, generateShareToken } from "../lib/crypto.js";
+import {
+  createBoothAccessToken,
+  hasValidBoothAccess,
+  isBoothAccessGateEnabled,
+  verifyBoothAccessPassword,
+} from "../lib/booth-access.js";
 import { putObject, getObject } from "@photobooth/services";
 import { enqueueAiJob } from "../lib/queue.js";
 import { env } from "../lib/env.js";
@@ -19,23 +26,36 @@ import { normalizeToPrintSize } from "@photobooth/services";
 
 export const publicRoutes = new Hono();
 
-publicRoutes.get("/instances/:slug", async (c) => {
-  const instance = await prisma.boothInstance.findFirst({
-    where: { slug: c.req.param("slug"), isActive: true },
-    include: {
-      filterPresets: {
-        where: { isActive: true },
-        orderBy: { sortOrder: "asc" },
-      },
-      frameAsset: true,
-    },
-  });
-
-  if (!instance) return c.json({ error: "Not found" }, 404);
-
-  return c.json({
+function instanceToPublicJson(
+  instance: {
+    slug: string;
+    name: string;
+    primaryColor: string;
+    secondaryColor: string;
+    logoUrl: string | null;
+    privacyNoticeHtml: string;
+    consentVersion: string;
+    retentionDays: number;
+    requireAge16: boolean;
+    enableDownload: boolean;
+    enableQrShare: boolean;
+    enableEmail: boolean;
+    enablePrint: boolean;
+    paymentEnabled: boolean;
+    paymentAmountMinor: number;
+    paymentCurrency: string;
+    frameEnabled: boolean;
+    maxPhotoVariants: number | null;
+    windowsPrinterName: string | null;
+    printBridgeUrl: string | null;
+    filterPresets: { id: string; name: string; isDefault: boolean }[];
+  },
+  accessGateEnabled: boolean
+) {
+  return {
     slug: instance.slug,
     name: instance.name,
+    accessGateEnabled,
     branding: {
       primaryColor: instance.primaryColor,
       secondaryColor: instance.secondaryColor,
@@ -67,10 +87,58 @@ publicRoutes.get("/instances/:slug", async (c) => {
       isDefault: f.isDefault,
     })),
     dataRegion: env.dataRegion,
+  };
+}
+
+publicRoutes.post("/booth-access/verify", async (c) => {
+  if (!isBoothAccessGateEnabled()) {
+    return c.json({ accessGateEnabled: false, accessToken: null });
+  }
+  const body = boothAccessVerifySchema.parse(await c.req.json());
+  if (!verifyBoothAccessPassword(body.password)) {
+    return c.json({ error: "Invalid access password" }, 401);
+  }
+  const accessToken = await createBoothAccessToken();
+  return c.json({
+    accessGateEnabled: true,
+    accessToken,
+    expiresInHours: 24,
   });
 });
 
+publicRoutes.get("/instances/:slug", async (c) => {
+  const instance = await prisma.boothInstance.findFirst({
+    where: { slug: c.req.param("slug"), isActive: true },
+    include: {
+      filterPresets: {
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+      },
+      frameAsset: true,
+    },
+  });
+
+  if (!instance) return c.json({ error: "Not found" }, 404);
+
+  const gateOn = isBoothAccessGateEnabled();
+  const allowed = await hasValidBoothAccess((name) => c.req.header(name));
+
+  if (gateOn && !allowed) {
+    return c.json({
+      slug: instance.slug,
+      name: instance.name,
+      accessGateEnabled: true,
+    });
+  }
+
+  return c.json(instanceToPublicJson(instance, false));
+});
+
 publicRoutes.post("/instances/:slug/sessions", async (c) => {
+  if (isBoothAccessGateEnabled() && !(await hasValidBoothAccess((name) => c.req.header(name)))) {
+    return c.json({ error: "Booth access password required" }, 401);
+  }
+
   const body = createSessionSchema.parse(await c.req.json());
   const instance = await prisma.boothInstance.findFirst({
     where: { slug: c.req.param("slug"), isActive: true },

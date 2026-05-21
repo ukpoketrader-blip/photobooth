@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+export const boothAccessVerifySchema = z.object({
+  password: z.string().min(1).max(200),
+});
+
 export const createSessionSchema = z.object({
   consentVersion: z.string(),
   marketingOptIn: z.boolean().default(false),

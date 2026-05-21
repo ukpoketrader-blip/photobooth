@@ -4,6 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { apiFetch, getApiUrl, getApiBaseForDisplay } from "@/lib/api";
+import {
+  getStoredBoothAccessToken,
+  setStoredBoothAccessToken,
+} from "@/lib/booth-access";
 import { capturePortraitFromVideo, PRINT_LABEL } from "@/lib/capture";
 import { JOB_POLL_INTERVAL_MS } from "@photobooth/shared";
 import { BoothShell } from "@/components/booth/BoothShell";
@@ -30,6 +34,7 @@ type BoothConfig = {
   };
   filters: { id: string; name: string; isDefault: boolean }[];
   dataRegion: string;
+  accessGateEnabled?: boolean;
 };
 
 type ProcessedVariant = {
@@ -59,19 +64,58 @@ export default function BoothPage() {
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [printing, setPrinting] = useState(false);
+  const [gatePassword, setGatePassword] = useState("");
+  const [gateError, setGateError] = useState<string | null>(null);
+  const [gateSubmitting, setGateSubmitting] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  const applyConfig = useCallback((c: BoothConfig) => {
+    setConfig(c);
+    const def = c.filters.find((f) => f.isDefault) ?? c.filters[0];
+    setSelectedFilter(def?.id ?? null);
+    setMaxPhotos(c.maxPhotoVariants ?? 3);
+    setStep("consent");
+  }, []);
+
+  const loadInstance = useCallback(
+    async (boothAccessToken?: string | null) => {
+      const token =
+        boothAccessToken !== undefined
+          ? boothAccessToken
+          : getStoredBoothAccessToken();
+      const c = await apiFetch<BoothConfig>(`/api/public/instances/${slug}`, {
+        boothAccessToken: token,
+      });
+      if (c.accessGateEnabled && (!c.filters || c.filters.length === 0)) {
+        setConfig({
+          slug: c.slug,
+          name: c.name,
+          accessGateEnabled: true,
+          branding: { primaryColor: "#070235", secondaryColor: "#4648d4" },
+          privacyNoticeHtml: "",
+          consentVersion: "",
+          retentionDays: 7,
+          requireAge16: false,
+          paymentEnabled: false,
+          paymentDisplay: null,
+          frameEnabled: false,
+          maxPhotoVariants: 3,
+          outputs: { download: false, qrShare: true, email: false, print: false },
+          filters: [],
+          dataRegion: "",
+        });
+        setStep("gate");
+        return;
+      }
+      applyConfig(c);
+    },
+    [slug, applyConfig]
+  );
+
   useEffect(() => {
-    apiFetch<BoothConfig>(`/api/public/instances/${slug}`)
-      .then((c) => {
-        setConfig(c);
-        const def = c.filters.find((f) => f.isDefault) ?? c.filters[0];
-        setSelectedFilter(def?.id ?? null);
-        setMaxPhotos(c.maxPhotoVariants ?? 3);
-        setStep("consent");
-      })
+    loadInstance()
       .catch((e) => {
         const msg = e instanceof Error ? e.message : "Unknown error";
         setError(
@@ -81,7 +125,35 @@ export default function BoothPage() {
         );
         setStep("error");
       });
-  }, [slug]);
+  }, [loadInstance]);
+
+  const submitGatePassword = useCallback(async () => {
+    setGateError(null);
+    setGateSubmitting(true);
+    try {
+      const res = await apiFetch<{
+        accessToken: string | null;
+        accessGateEnabled: boolean;
+      }>("/api/public/booth-access/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: gatePassword }),
+        boothAccessToken: null,
+      });
+      if (!res.accessToken) {
+        setGateError("Access gate is not enabled on the server.");
+        return;
+      }
+      setStoredBoothAccessToken(res.accessToken);
+      setGatePassword("");
+      setStep("loading");
+      await loadInstance(res.accessToken);
+    } catch (e) {
+      setGateError(e instanceof Error ? e.message : "Invalid password");
+    } finally {
+      setGateSubmitting(false);
+    }
+  }, [gatePassword, loadInstance]);
 
   const refreshVariants = useCallback(async () => {
     if (!token || !sessionId) return null;
@@ -322,6 +394,45 @@ export default function BoothPage() {
         <div className="md-spinner md-spinner--on-surface" aria-hidden />
         <p className="text-headline-md">Warming up the lab…</p>
         <p className="text-body-lead">Almost ready for your close-up</p>
+      </div>
+    );
+  }
+
+  if (step === "gate" && config) {
+    return (
+      <div className="booth-fullscreen">
+        <StepIntro
+          eyebrow="Private preview"
+          title="Enter access code"
+          lead={`${config.name} is in development. Enter the password to start a session.`}
+        />
+        <div className="booth-gate-card md-card md-card--elevated">
+          <label className="booth-gate-label" htmlFor="booth-gate-password">
+            Access password
+          </label>
+          <input
+            id="booth-gate-password"
+            className="booth-gate-input"
+            type="password"
+            autoComplete="current-password"
+            value={gatePassword}
+            onChange={(e) => setGatePassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && gatePassword && !gateSubmitting) {
+                void submitGatePassword();
+              }
+            }}
+          />
+          {gateError ? <p className="booth-gate-error">{gateError}</p> : null}
+          <button
+            type="button"
+            className="md-btn md-btn--hero"
+            disabled={!gatePassword || gateSubmitting}
+            onClick={() => void submitGatePassword()}
+          >
+            {gateSubmitting ? "Checking…" : "Continue"}
+          </button>
+        </div>
       </div>
     );
   }

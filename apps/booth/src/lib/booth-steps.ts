@@ -1,5 +1,6 @@
 export type BoothStep =
   | "loading"
+  | "gate"
   | "consent"
   | "payment"
   | "filter"
@@ -37,6 +38,7 @@ export function stepToPhaseIndex(
   switch (step) {
     case "loading":
     case "error":
+    case "gate":
       return -1;
     case "consent":
       phase = "welcome";

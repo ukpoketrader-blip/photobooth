@@ -6,6 +6,8 @@ export const env = {
   redisUrl: process.env.REDIS_URL ?? "redis://localhost:6379",
   authSecret: process.env.AUTH_SECRET ?? "dev-auth-secret-change-me",
   boothJwtSecret: process.env.BOOTH_JWT_SECRET ?? "dev-booth-jwt-secret",
+  /** When set, booth must unlock via password before sessions / AI (dev/demo). */
+  boothAccessPassword: process.env.BOOTH_ACCESS_PASSWORD ?? "",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
   geminiImageModel:
     process.env.GEMINI_IMAGE_MODEL ?? "gemini-3-pro-image-preview",

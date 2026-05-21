@@ -875,3 +875,41 @@ button:focus-visible,
   margin-left: auto;
   margin-right: auto;
 }
+
+/* Dev / preview access gate */
+.booth-gate-card {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--stack-sm);
+  text-align: left;
+}
+
+.booth-gate-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--md-sys-color-ink-dark);
+}
+
+.booth-gate-input {
+  width: 100%;
+  min-height: var(--touch-min);
+  padding: var(--stack-sm) var(--gutter);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--md-sys-color-border-subtle);
+  font-size: 1.125rem;
+  background: var(--md-sys-color-surface-container-lowest);
+}
+
+.booth-gate-input:focus {
+  outline: none;
+  border-color: var(--md-sys-color-secondary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-sys-color-secondary) 20%, transparent);
+}
+
+.booth-gate-error {
+  color: var(--md-sys-color-error);
+  font-size: 0.9375rem;
+  margin: 0;
+}
