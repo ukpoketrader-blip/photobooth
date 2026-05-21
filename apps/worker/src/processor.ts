@@ -87,7 +87,11 @@ export async function processAiJob(aiJobId: string) {
     let message = err instanceof Error ? err.message : "Unknown error";
     if (message.includes("ENOENT")) {
       message =
-        "Photo file not found on worker disk. On Railway, mount the same volume at /data/uploads on both api and worker (STORAGE_LOCAL_PATH=/data/uploads).";
+        "Photo file not found. Ensure api has api-volume at /data/uploads and worker has API_URL=https://api.eventlab.uk.";
+    }
+    if (message.includes("fetch failed") || message.includes("Cannot reach API")) {
+      message =
+        "Worker cannot reach the API. On worker set API_URL=https://api.eventlab.uk (not localhost), redeploy api+worker, and set the same WORKER_STORAGE_SECRET on both.";
     }
     await prisma.aiJob.update({
       where: { id: aiJobId },
@@ -118,6 +122,10 @@ export function startWorker() {
     console.error(`Job ${job?.id} failed:`, err.message);
   });
 
-  console.log("AI job worker started");
+  const apiUrl = process.env.API_URL?.trim();
+  console.log("AI job worker started", {
+    apiUrl: apiUrl || "(missing — set API_URL on worker)",
+    storageMirror: process.env.STORAGE_MIRROR_TO_API === "true",
+  });
   return worker;
 }

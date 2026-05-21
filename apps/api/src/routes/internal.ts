@@ -14,11 +14,14 @@ internalRoutes.post("/storage", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
 
-  const body = await c.req.json<{ key?: string; data?: string }>();
-  if (!body.key || !body.data) {
-    return c.json({ error: "key and data (base64) required" }, 400);
+  const form = await c.req.parseBody();
+  const key = String(form["key"] ?? "");
+  const file = form["file"];
+  if (!key || !file || typeof file === "string") {
+    return c.json({ error: "Multipart fields required: key, file" }, 400);
   }
 
-  await putObject(body.key, Buffer.from(body.data, "base64"));
+  const buffer = Buffer.from(await (file as File).arrayBuffer());
+  await putObject(key, buffer, "image/jpeg");
   return c.json({ ok: true });
 });

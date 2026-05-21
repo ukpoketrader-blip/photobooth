@@ -21,7 +21,9 @@ export async function applyImageFilter(
 
   const ai = new GoogleGenAI({ apiKey: servicesEnv.geminiApiKey });
 
-  const response = await ai.models.generateContent({
+  let response;
+  try {
+    response = await ai.models.generateContent({
     model: servicesEnv.geminiImageModel,
     contents: [
       { text: fullPrompt },
@@ -40,6 +42,15 @@ export async function applyImageFilter(
       },
     },
   });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("fetch failed")) {
+      throw new Error(
+        `Gemini API request failed (network). Check GEMINI_API_KEY on worker and Railway outbound access. ${msg}`
+      );
+    }
+    throw err;
+  }
 
   const parts = response.candidates?.[0]?.content?.parts ?? [];
   for (const part of parts) {
