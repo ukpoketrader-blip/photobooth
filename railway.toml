@@ -6,7 +6,8 @@
 
 [build]
 builder = "NIXPACKS"
-buildCommand = "pnpm install --frozen-lockfile && pnpm db:generate"
+# Install from monorepo root (lockfile must match). If frozen fails, allow refresh:
+buildCommand = "pnpm install && pnpm db:generate"
 
 [deploy]
 restartPolicyType = "ON_FAILURE"

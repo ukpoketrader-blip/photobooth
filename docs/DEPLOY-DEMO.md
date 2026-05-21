@@ -101,8 +101,10 @@ To delete: open the service → **Settings** → scroll down → **Delete servic
 
 | Setting | Value |
 |---------|--------|
-| Root Directory | *(leave empty = repo root)* |
+| Root Directory | **Empty** (repo root `/`) — **not** `apps/api` |
 | Watch Paths | `apps/api/**`, `packages/**` |
+
+If Root Directory is `apps/api`, the build uses `pnpm i --frozen-lockfile` against a stale slice of the lockfile and fails with `ERR_PNPM_OUTDATED_LOCKFILE`. Fix: clear Root Directory, save, **Redeploy** (enable **Clear build cache** if offered).
 
 **Settings → Deploy → Custom start command**
 

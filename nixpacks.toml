@@ -1,0 +1,3 @@
+# Railway / Nixpacks — monorepo must install from repository root.
+[phases.install]
+cmds = ["pnpm install", "pnpm db:generate"]
