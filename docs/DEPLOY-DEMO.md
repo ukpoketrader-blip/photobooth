@@ -159,8 +159,17 @@ Redeploy after adding variables.
 pnpm --filter @photobooth/worker exec tsx src/index.ts
 ```
 
+**Settings → Source**
+
+| Setting | Value |
+|---------|--------|
+| Root Directory | **Empty** (same as `api`) — if set to `apps/worker`, the build may still work via `apps/worker/nixpacks.toml`, but empty root is preferred |
+| Custom start command | `pnpm --filter @photobooth/worker exec tsx src/index.ts` |
+
 **Variables** — copy the same env vars as `api` (especially `DATABASE_URL`, `REDIS_URL`, `GEMINI_API_KEY`, `STORAGE_LOCAL_PATH`).  
 **Attach the same volume** at `/data/uploads` (Railway: share volume between services in one project).
+
+If the worker build log shows `pnpm i --frozen-lockfile` and `ERR_PNPM_OUTDATED_LOCKFILE`: clear **Root Directory**, enable **Clear build cache**, redeploy. The repo includes `apps/worker/nixpacks.toml` so installs run `cd ../.. && pnpm install` from the monorepo root.
 
 ### 3d. Custom domain on Railway (`api`)
 

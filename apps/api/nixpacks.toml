@@ -1,0 +1,3 @@
+# API service — install from monorepo root if Root Directory is apps/api.
+[phases.install]
+cmds = ["cd ../.. && pnpm install && pnpm db:generate"]

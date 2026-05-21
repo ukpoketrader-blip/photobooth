@@ -1,0 +1,4 @@
+# Worker service is often deployed with Root Directory = apps/worker.
+# Install must run from the monorepo root where pnpm-lock.yaml lives.
+[phases.install]
+cmds = ["cd ../.. && pnpm install && pnpm db:generate"]
