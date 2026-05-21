@@ -69,12 +69,31 @@ Note the seed output: **demo booth** slug and **admin password**.
 
 ## 3. Railway (API + worker)
 
-Railway runs the backend and the background AI worker. One GitHub repo, **two services**.
+Railway runs the backend and the background AI worker. One GitHub repo, **two services only**.
+
+### Important: Railway may create 5 services
+
+If you import a **pnpm monorepo**, Railway often auto-creates a service for every package with a `start` script (`api`, `worker`, `booth`, `admin`, `print-bridge`).
+
+**Keep only `api` and `worker`.** Delete the others:
+
+| Service | Action |
+|---------|--------|
+| `@photobooth/api` | **Keep** |
+| `@photobooth/worker` | **Keep** |
+| `@photobooth/booth` | **Delete** → deploy on **Vercel** instead |
+| `@photobooth/admin` | **Delete** → deploy on **Vercel** instead |
+| `@photobooth/print-bridge` | **Delete** → runs on the **Windows kiosk PC** only, not in the cloud |
+
+To delete: open the service → **Settings** → scroll down → **Delete service**.
+
+`booth` / `admin` crash on Railway because they are **Next.js** apps meant for Vercel, not Railway’s default Node start.
 
 ### 3a. New project
 
 1. [railway.app](https://railway.app) → **New project** → **Deploy from GitHub** → select your `photobooth` repo.  
-2. Railway creates a first service — rename it **`api`**.
+2. If Railway created 5 services, delete `booth`, `admin`, and `print-bridge` as above.  
+3. Rename the API service to **`api`** and ensure **`worker`** exists (add from GitHub if you started with only one).
 
 ### 3b. Configure the `api` service
 
