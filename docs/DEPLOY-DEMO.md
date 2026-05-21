@@ -199,6 +199,14 @@ Health check: `https://api.yourdomain.com/health` → `{"status":"ok",...}`.
 
 Create **two** Vercel projects from the **same** GitHub repository.
 
+### Prisma warning on Vercel (`Could not find your Prisma schema`)
+
+**Admin** and **booth** do not use Prisma. Vercel still runs `pnpm install` on the whole monorepo, which triggers `@prisma/client` postinstall.
+
+The repo sets `PRISMA_GENERATE_SKIP_AUTOINSTALL=true` in `apps/admin/vercel.json` and `apps/booth/vercel.json` to skip that step. **Safe to ignore** if the build succeeds.
+
+Prisma is only required on **Railway `api` / `worker`** (`pnpm db:generate` in the build).
+
 ### 4a. Project: `photobooth-booth`
 
 | Setting | Value |

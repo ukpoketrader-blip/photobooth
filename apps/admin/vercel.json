@@ -1,5 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "installCommand": "cd ../.. && PRISMA_GENERATE_SKIP_AUTOINSTALL=true pnpm install --frozen-lockfile",
   "buildCommand": "cd ../.. && pnpm --filter @photobooth/admin build"
 }
