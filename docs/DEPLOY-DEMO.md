@@ -198,8 +198,9 @@ Create **two** Vercel projects from the **same** GitHub repository.
 API_URL=https://api.yourdomain.com
 NEXT_PUBLIC_BOOTH_URL=https://booth.yourdomain.com
 NEXT_PUBLIC_ADMIN_URL=https://admin.yourdomain.com
-NEXT_PUBLIC_API_URL=
 ```
+
+Do **not** add `NEXT_PUBLIC_API_URL` (Vercel often rejects blank values). Requests use `/api/...` on the same host, rewritten to `API_URL`. If Vercel requires a value, set `NEXT_PUBLIC_API_URL` to the **same URL as this app** (booth project → `NEXT_PUBLIC_BOOTH_URL`).
 
 Deploy → **Settings → Domains** → add `booth.yourdomain.com`.
 
@@ -215,8 +216,9 @@ Deploy → **Settings → Domains** → add `booth.yourdomain.com`.
 API_URL=https://api.yourdomain.com
 NEXT_PUBLIC_BOOTH_URL=https://booth.yourdomain.com
 NEXT_PUBLIC_ADMIN_URL=https://admin.yourdomain.com
-NEXT_PUBLIC_API_URL=
 ```
+
+Do **not** add `NEXT_PUBLIC_API_URL`, or set it to **`NEXT_PUBLIC_ADMIN_URL`** if Vercel requires a non-empty value.
 
 Deploy → add domain `admin.yourdomain.com`.
 

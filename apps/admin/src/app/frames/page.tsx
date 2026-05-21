@@ -7,7 +7,8 @@ import { Nav } from "@/components/Nav";
 import { PageHeader } from "@/components/PageHeader";
 import { adminFetch, getToken } from "@/lib/api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002";
+/** Empty = same-origin /api via Next.js rewrite (see next.config.ts). */
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 type FrameAsset = {
   id: string;
