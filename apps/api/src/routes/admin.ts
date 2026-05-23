@@ -110,6 +110,13 @@ adminRoutes.post("/booth-instances", async (c) => {
       frameEnabled: body.frameEnabled,
       frameAssetId: body.frameAssetId ?? undefined,
       privacyNoticeHtml: body.privacyNoticeHtml,
+      geminiImageModel: body.geminiImageModel,
+      maxPhotoVariants: body.maxPhotoVariants,
+      enablePrint: body.enablePrint,
+      enableQrShare: body.enableQrShare,
+      enableDownload: body.enableDownload,
+      windowsPrinterName: body.windowsPrinterName ?? undefined,
+      printBridgeUrl: body.printBridgeUrl ?? undefined,
     },
   });
 

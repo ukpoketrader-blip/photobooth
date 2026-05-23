@@ -9,6 +9,7 @@ import {
   setStoredBoothAccessToken,
 } from "@/lib/booth-access";
 import { capturePortraitFromVideo, PRINT_LABEL } from "@/lib/capture";
+import { useCountdownCapture } from "@/lib/use-countdown-capture";
 import { JOB_POLL_INTERVAL_MS } from "@photobooth/shared";
 import { BoothShell } from "@/components/booth/BoothShell";
 import { StepIntro } from "@/components/booth/StepIntro";
@@ -381,6 +382,8 @@ export default function BoothPage() {
     refreshVariants,
   ]);
 
+  const countdown = useCountdownCapture(captureAndProcess);
+
   const printPhoto = useCallback(async () => {
     if (!token || !sessionId) return;
     setPrinting(true);
@@ -474,11 +477,13 @@ export default function BoothPage() {
     return (
       <div className="processing-overlay" role="alert" aria-busy="true">
         <div className="processing-overlay__card">
-          <div className="md-spinner" aria-hidden />
-          <h2 className="text-headline-lg" style={{ color: "#fff", marginTop: "1rem" }}>
+          <div className="processing-overlay__spinner" aria-hidden>
+            <div className="md-spinner" />
+          </div>
+          <h2 className="processing-overlay__title text-headline-lg">
             Working our magic
           </h2>
-          <p className="text-body-lead" style={{ color: "rgba(255,255,255,0.9)" }}>
+          <p className="processing-overlay__lead text-body-lead">
             Styling your portrait — usually 5–15 seconds
           </p>
         </div>
@@ -628,12 +633,21 @@ export default function BoothPage() {
           <div className="photo-frame photo-frame--live">
             <video ref={videoRef} playsInline muted />
             <canvas ref={canvasRef} style={{ display: "none" }} />
+            {countdown.overlay}
           </div>
-          <CountdownCapture onCapture={captureAndProcess} />
           <div className="md-btn-stack">
             <button
               type="button"
+              className="md-btn md-btn--hero"
+              disabled={countdown.isCounting}
+              onClick={countdown.start}
+            >
+              Take photo
+            </button>
+            <button
+              type="button"
               className="md-btn md-btn--outlined"
+              disabled={countdown.isCounting}
               onClick={() => {
                 stopCamera();
                 setStep("filter");
@@ -790,35 +804,3 @@ export default function BoothPage() {
   );
 }
 
-function CountdownCapture({ onCapture }: { onCapture: () => void }) {
-  const [count, setCount] = useState<number | null>(null);
-
-  const start = () => setCount(3);
-
-  useEffect(() => {
-    if (count === null) return;
-    if (count === 0) {
-      onCapture();
-      setCount(null);
-      return;
-    }
-    const t = setTimeout(() => setCount(count - 1), 1000);
-    return () => clearTimeout(t);
-  }, [count, onCapture]);
-
-  if (count !== null) {
-    return (
-      <div className="countdown-wrap" aria-live="polite">
-        <div key={count} className="countdown-display">
-          {count > 0 ? count : "Go!"}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <button type="button" className="md-btn md-btn--hero" onClick={start}>
-      Take photo
-    </button>
-  );
-}

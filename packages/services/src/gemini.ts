@@ -8,7 +8,8 @@ export async function applyImageFilter(
   imageBuffer: Buffer,
   mimeType: string,
   prompt: string,
-  negativePrompt?: string | null
+  negativePrompt?: string | null,
+  modelId?: string
 ): Promise<Buffer> {
   if (!servicesEnv.geminiApiKey) {
     if (servicesEnv.nodeEnv === "development") return imageBuffer;
@@ -24,7 +25,7 @@ export async function applyImageFilter(
   let response;
   try {
     response = await ai.models.generateContent({
-    model: servicesEnv.geminiImageModel,
+    model: modelId?.trim() || servicesEnv.geminiImageModel,
     contents: [
       { text: fullPrompt },
       {

@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { GEMINI_IMAGE_MODEL_IDS } from "./gemini-models";
+
+export const geminiImageModelSchema = z.enum(GEMINI_IMAGE_MODEL_IDS);
 
 export const boothAccessVerifySchema = z.object({
   password: z.string().min(1).max(200),
@@ -49,6 +52,7 @@ export const createBoothInstanceSchema = z.object({
   enableDownload: z.boolean().optional(),
   windowsPrinterName: z.string().max(200).optional().nullable(),
   printBridgeUrl: z.string().max(500).optional().nullable(),
+  geminiImageModel: geminiImageModelSchema.optional(),
 });
 
 export const updateBoothInstanceSchema = createBoothInstanceSchema.partial();

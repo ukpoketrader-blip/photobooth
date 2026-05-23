@@ -15,7 +15,9 @@ GEMINI_API_KEY="AIzaSy...your-key-here"
 GEMINI_IMAGE_MODEL="gemini-3-pro-image-preview"
 ```
 
-This is **Nano Banana Pro** (Gemini 3 Pro Image). See the [model docs](https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-image-preview).
+This is the default (**Nano Banana Pro**, `gemini-3-pro-image-preview`). Per-booth choice is in **Admin → instance → AI image model** (Nano Banana 2 = `gemini-3.1-flash-image-preview` for speed).
+
+See the [Pro model docs](https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-image-preview) and [Flash Image docs](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image-preview).
 
 ## 3. Restart services
 

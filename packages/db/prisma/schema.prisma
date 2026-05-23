@@ -104,6 +104,8 @@ model BoothInstance {
 
   dailyJobCap       Int @default(500)
   maxConcurrentJobs Int @default(3)
+  /// Gemini image model for AI styling (Nano Banana Pro / Nano Banana 2).
+  geminiImageModel  String @default("gemini-3-pro-image-preview")
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())

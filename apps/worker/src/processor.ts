@@ -41,7 +41,8 @@ export async function processAiJob(aiJobId: string) {
       original,
       "image/jpeg",
       job.filterPreset.promptTemplate,
-      job.filterPreset.negativePrompt
+      job.filterPreset.negativePrompt,
+      job.modelId
     );
     styled = await normalizeToPrintSize(styled);
 

@@ -6,6 +6,7 @@ import {
   createPaymentSchema,
   selectJobSchema,
   MAX_PHOTO_VARIANTS,
+  resolveGeminiImageModel,
 } from "@photobooth/shared";
 import { boothAuth, createBoothToken } from "../middleware/auth.js";
 import { hashIp, generateShareToken } from "../lib/crypto.js";
@@ -411,7 +412,10 @@ publicRoutes.post("/sessions/:id/captures", boothAuth, async (c) => {
       data: {
         captureId: capture.id,
         filterPresetId: preset.id,
-        modelId: env.geminiImageModel,
+        modelId: resolveGeminiImageModel(
+        session.boothInstance.geminiImageModel,
+        env.geminiImageModel
+      ),
         shareToken,
       },
     });

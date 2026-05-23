@@ -6,6 +6,10 @@ import { AdminShell } from "@/components/AdminShell";
 import { Nav } from "@/components/Nav";
 import { PageHeader } from "@/components/PageHeader";
 import { adminFetch, getToken } from "@/lib/api";
+import {
+  GEMINI_IMAGE_MODEL_OPTIONS,
+  type GeminiImageModelId,
+} from "@photobooth/shared";
 
 type FilterPreset = {
   id: string;
@@ -34,6 +38,7 @@ type Instance = {
   enablePrint: boolean;
   windowsPrinterName: string | null;
   printBridgeUrl: string | null;
+  geminiImageModel: GeminiImageModelId;
   filterPresets: FilterPreset[];
 };
 
@@ -180,6 +185,27 @@ export default function InstanceEditPage() {
 
         <div className="card">
           <h2>General</h2>
+          <div className="field">
+            <label>AI image model</label>
+            <select
+              value={instance.geminiImageModel}
+              onChange={(e) =>
+                save({
+                  geminiImageModel: e.target.value as GeminiImageModelId,
+                })
+              }
+            >
+              {GEMINI_IMAGE_MODEL_OPTIONS.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label} — {opt.description}
+                </option>
+              ))}
+            </select>
+            <small>
+              Nano Banana Pro for best quality; Nano Banana 2 for faster turns at
+              busy events.
+            </small>
+          </div>
           <div className="field">
             <label>Primary colour</label>
             <input
