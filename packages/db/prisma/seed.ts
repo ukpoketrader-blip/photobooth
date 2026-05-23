@@ -5,7 +5,6 @@ import { createHash, randomBytes, scryptSync } from "crypto";
 
 const repoRoot = resolve(__dirname, "../..");
 config({ path: resolve(repoRoot, ".env") });
-config({ path: resolve(repoRoot, "packages/db/.env") });
 
 const prisma = new PrismaClient();
 

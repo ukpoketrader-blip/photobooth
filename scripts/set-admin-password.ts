@@ -10,7 +10,6 @@ import { PrismaClient } from "@prisma/client";
 
 const repoRoot = resolve(__dirname, "..");
 config({ path: resolve(repoRoot, ".env") });
-config({ path: resolve(repoRoot, "packages/db/.env") });
 import { randomBytes, scryptSync } from "crypto";
 
 function hashPassword(password: string): string {
